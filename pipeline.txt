@@ -1,0 +1,90 @@
+1. 数据下载命令
+HF_TOKEN=xxx \
+./scripts/1_download_hf_files_year.sh 2015 all \
+--max-parallel 16
+
+2. 解析html
+bash scripts/2_read_tw_data_batch_simple.sh \
+  data/2015/selected_packages.tsv \
+  all \
+  --jobs 128
+
+3. 获取图片url
+python scripts/3_get_image_urls.py \
+  --html-counts outputs/final/htmls/2015/html_counts.json \
+  --html-root outputs/final/htmls \
+  --workers 128 \
+  --report-prefix outputs/final/analysis/2015/image_scan
+
+4. 扫描有效域名
+python scripts/4_scan_domain.py \
+  --input outputs/final/analysis/2015/image_scan_domain_urls.json \
+  --output-prefix outputs/final/analysis/2015/domain_scan \
+  --workers 128 \
+  --timeout 5 \
+  --max-prefixes 6 \
+  --max-samples 3
+
+5. 直接扫描并下载图片
+python scripts/5_scan_and_download_images.py \
+  --accessible-domains outputs/final/analysis/2015/domain_scan_accessible_domains.json \
+  --domain-urls outputs/final/analysis/2015/image_scan_domain_urls.json \
+  --output-prefix outputs/final/images/2015_test/image_scan_4_4 \
+  --output-root outputs/final/images/2015_test \
+  --workers 64 \
+  --splits 4 \
+  --index 4 \
+  --resume
+
+6. 分析访问结果，同时合并所有下载的文件
+python scripts/6_analyze_image_size_scan.py \
+  --input-dir outputs/final/images/2015_test \
+  --output-prefix outputs/final/analysis/2015/analyze_image_size_final \
+  --merge-workers 16 \
+  --workers 64 \
+  --chunk-size 50000 \
+  --topk 50
+
+7. 获取url的caption
+python scripts/7_get_image_text_pairs_jsonl.py \
+  --image-size-detailed outputs/final/images/2015_test/merged_success.jsonl \
+  --image-scan-per-html outputs/final/analysis/2015/image_scan_records.jsonl \
+  --output outputs/final/pairs/2015/image_text_pairs_final.jsonl \
+  --workers 64 \
+  --load-workers 16 \
+  --load-chunk-size 50000 \
+  --resume
+
+8. 用clip模型去选择caption，并计算一个相似度的值
+这个需要进入Chinese-CLIP目录运行
+
+GPU_IDS=0,1,2,3,4,5,6,7 \
+  IMAGE_BATCH_SIZE=256 \
+  TEXT_BATCH_SIZE=1024 \
+  IMAGE_WORKERS=12 \
+  bash run_scripts/tools/filter_tianwang_caption_similarity_multi.sh
+
+9. 相似度统计和过滤
+获取统计信息
+python scripts/9_analyze_caption_similarity_jsonl.py \
+  --input outputs/final/pairs/2015/image_text_pairs_new_with_caption_similarity_filtered.jsonl \
+  --output-sorted outputs/final/pairs/2015/image_text_pairs_new_with_caption_similarity_sorted.jsonl \
+  --output-stats outputs/final/analysis/2015/image_text_pairs_new_with_caption_similarity_stats.json \
+  --workers 64 \
+  --chunk-size 50000
+
+对应选择阈值来过滤
+python scripts/9_filter_caption_similarity_jsonl.py \
+    --input outputs/final/pairs/2015/image_text_pairs_new_with_caption_similarity_sorted.jsonl \
+    --threshold 0.49 \
+    --output outputs/final/pairs/2015/image_text_pairs_similarity_ge_0.49.jsonl
+
+* 可视化原始结果（optional）
+python scripts/10_build_image_text_pairs_viewer.py \
+  --input outputs/2013_2014/analysis/image_text_pairs.jsonl \
+  --output image_text_pairs_viewer.html
+
+* 解析danqing的输出数据，用于清洗后可视化
+python scripts/11_decode_final_recordio.py \
+  --input-prefix outputs/2013_2014/danqing/final \
+  --output-dir outputs/2013_2014/danqing/final_decoded

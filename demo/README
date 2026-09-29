@@ -1,0 +1,74 @@
+# tw_raw_t Demo
+
+This project provides `tw_raw_t`, a tool for reading CTW_Raw/TW_Raw records and outputting raw records, HTTP replies, or HTTP bodies.
+
+## Project Layout
+
+- `src/`: source code and `Makefile`
+- `bin/`: compiled executable copied by `make`
+- `TWFormat.pdf`: TW raw format reference
+
+## Build
+
+Requirements:
+
+- `g++`
+- `zlib` (linked with `-lz`)
+
+From the project root:
+
+```bash
+make -C src
+```
+
+After build, the executable is available at:
+
+- `src/tw_raw_t`
+- `bin/tw_raw_t`
+
+## Quick Runnable Test
+
+Run this command in the `src/` directory:
+
+```bash
+cat /tmp/Downloads/Web_Raw.M201401.0001 | ./tw_raw_t --one-by-one
+```
+
+Notes:
+
+- Input is read from standard input.
+- `--one-by-one` writes each record to a separate file.
+- Default output names look like `1.raw`, `2.raw`, `3.raw`, ...
+
+## Common Options
+
+- `--num=N`: process at most `N` records
+- `--one-by-one`: write one output file per record
+- `--package`: output records in `length + content` package format (conflicts with `--one-by-one`)
+- `--http-reply`: output HTTP reply only (without TW_Raw outer headers)
+- `--body-only`: output HTTP body only
+- `--prefix=URL_PREFIX`: keep records whose URL starts with this prefix (can be repeated)
+- `--select=FILE`: read selected URLs from a file (one URL per line)
+- `-h` / `--help`: print help message
+
+## More Examples
+
+Extract at most 4 pages and output body-only files one by one:
+
+```bash
+cat Web_Raw.M201311.0001 | ./bin/tw_raw_t --num=4 --body-only --one-by-one
+```
+
+Show help:
+
+```bash
+./bin/tw_raw_t --help
+```
+
+## Evaluation Dataset Download Links
+
+Only listed here for reference; no download is required in this README.
+
+- https://huggingface.co/datasets/OpenDCAI/PKU_TianWang
+- https://huggingface.co/datasets/OpenDCAI/PKU_TianWang2
+- https://huggingface.co/datasets/OpenDCAI/PKU_TianWang3

@@ -1,0 +1,21 @@
+.venv/
+data/
+log.txt
+
+# Never include downloaded data, generated outputs, local deps, or caches.
+/downloads/
+/outputs/
+/.deps/
+/.mplconfig/
+/__pycache__/
+/demo/src/lex.yy.cc
+/outputs.tar.gz
+analysis_plots/
+models/
+data_new/
+outputs_new/
+
+*.pyc
+
+obelics-pipeline-main
+obelics-pipeline-main/oblics-official/build_obelics_mine/html_output
